@@ -5,7 +5,7 @@
 *.d
 *.dSYM
 .DS_Store
-jic
+atmo
 Makefile.in
 data
 media

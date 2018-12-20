@@ -2,8 +2,8 @@
 #include <sstream>
 #include "json.hpp"
 #include "app_utils.hpp"
-#include "jic.hpp"
-using namespace jic;
+#include "atmo.hpp"
+using namespace atmo;
 
 
 
@@ -21,11 +21,6 @@ VISITABLE_STRUCT(run_config,
     num_blocks,
     num_threads,
     test_mode,
-    jet_opening_angle,
-    jet_velocity,
-    jet_density,
-    density_index,
-    temperature,
     outer_radius);
 
 

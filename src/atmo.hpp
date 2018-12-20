@@ -7,7 +7,7 @@
 
 
 // ============================================================================
-namespace jic {
+namespace atmo {
     struct run_status;
     struct run_config;
 }
@@ -16,7 +16,7 @@ namespace jic {
 
 
 // ============================================================================
-struct jic::run_status
+struct atmo::run_status
 {
     static run_status from_file(std::string restart);
     static run_status from_json(std::istream& is);
@@ -46,7 +46,7 @@ struct jic::run_status
 
 
 // ============================================================================
-struct jic::run_config
+struct atmo::run_config
 {
     static run_config from_json(std::istream& is);
     static run_config from_dict(std::map<std::string, std::string> items);
@@ -82,10 +82,5 @@ struct jic::run_config
     int test_mode       = 0;
 
     /** Physics setup */
-    double jet_opening_angle = 0.5;
-    double jet_velocity      = 0.9;
-    double jet_density       = 0.01;
-    double density_index     = 2.0;
-    double temperature       = 0.01;
     double outer_radius      = 10.0;
 };

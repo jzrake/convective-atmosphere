@@ -21,7 +21,7 @@ CXXFLAGS += -O3
 SRC := $(wildcard src/*.cpp)
 OBJ := $(SRC:%.cpp=%.o)
 DEP := $(SRC:%.cpp=%.d)
-EXE := jic
+EXE := atmo
 
 
 # Build rules

@@ -520,6 +520,8 @@ void update(ThreadPool& pool, Database& database, double dt, int rk)
 // ============================================================================
 struct atmosphere
 {
+    atmosphere(double noise=0.0) : noise(noise) {}
+
     inline std::array<double, 5> operator()(std::array<double, 2> X) const
     {
         const double r = X[0];
@@ -528,8 +530,10 @@ struct atmosphere
         const double cs = vf / std::sqrt(a);  // sound speed via Virial condition
         const double dg = std::pow(r, -a);    // power-law everywhere (infinite Virial radius)
         const double pg = dg * cs * cs / (5. / 3);
-        return {dg, 0, 0, 0, pg};
+        const double delta = noise * std::rand() / RAND_MAX;
+        return {dg + delta, 0, 0, 0, pg};
     }
+    double noise;
 };
 
 
@@ -628,7 +632,7 @@ Database create_database(run_config cfg)
             database.insert(std::make_tuple(i, 0, 0, Field::face_area_i), a_faces_i);
             database.insert(std::make_tuple(i, 0, 0, Field::face_area_j), a_faces_j);
 
-            auto initial_data = ufunc::vfrom(atmosphere());
+            auto initial_data = ufunc::vfrom(atmosphere(1e-3));
             database.insert(std::make_tuple(i, 0, 0, Field::conserved), prim_to_cons(initial_data(x_cells)));
         }
     }

@@ -36,6 +36,32 @@ namespace newtonian_hydro {
     struct prim_to_eval;
     struct riemann_hlle;
     struct source_terms;
+
+    static inline Vars check_valid_cons(Vars U, const char* caller)
+    {
+        if (U[DDD] < 0.0)
+        {
+            throw std::runtime_error(std::string(caller) + ": negative conserved density");
+        }
+        if (U[NRG] < 0.0)
+        {
+            throw std::runtime_error(std::string(caller) + ": negative conserved energy " + std::to_string(U[NRG]));
+        }
+        return U;
+    }
+
+    static inline Vars check_valid_prim(Vars P, const char* caller)
+    {
+        if (P[RHO] < 0.0)
+        {
+            throw std::runtime_error(std::string(caller) + ": negative density");
+        }
+        if (P[PRE] < 0.0)
+        {
+            throw std::runtime_error(std::string(caller) + ": negative pressure p = " + std::to_string(P[PRE]));
+        }
+        return P;
+    }
 }
 
 
@@ -46,6 +72,8 @@ struct newtonian_hydro::cons_to_prim
 {
     inline Vars operator()(Vars U) const
     {
+        check_valid_cons(U, "newtonian_hydro::cons_to_prim");
+
         const double gm1 = gammaLawIndex - 1.0;
         const double pp = U[S11] * U[S11] + U[S22] * U[S22] + U[S33] * U[S33];
         auto P = Vars();
@@ -56,7 +84,7 @@ struct newtonian_hydro::cons_to_prim
         P[V22] =  U[S22] / U[DDD];
         P[V33] =  U[S33] / U[DDD];
 
-        return P;
+        return check_valid_prim(P, "newtonian_hydro::cons_to_prim");
     }
     double gammaLawIndex = 5. / 3;
 };
@@ -69,6 +97,8 @@ struct newtonian_hydro::prim_to_cons
 {
     inline Vars operator()(Vars P) const
     {
+        check_valid_prim(P, "newtonian_hydro::prim_to_cons");
+
         const double gm1 = gammaLawIndex - 1.0;
         const double vv = P[V11] * P[V11] + P[V22] * P[V22] + P[V33] * P[V33];
         auto U = Vars();
@@ -92,6 +122,8 @@ struct newtonian_hydro::prim_to_flux
 {
     inline Vars operator()(Vars P, Unit N) const
     {
+        check_valid_prim(P, "newtonian_hydro::prim_to_flux");
+
         const double vn = P[V11] * N[0] + P[V22] * N[1] + P[V33] * N[2];
         auto U = prim_to_cons()(P);
         auto F = Vars();
@@ -115,8 +147,12 @@ struct newtonian_hydro::prim_to_eval
 {
     inline Vars operator()(Vars P, Unit N) const
     {
+        check_valid_prim(P, "newtonian_hydro::prim_to_eval");
+
         const double gm0 = gammaLawIndex;
-        const double cs = std::sqrt(gm0 * P[PRE] / P[RHO]);
+        const double dg = P[RHO];
+        const double pg = std::max(0.0, P[PRE]);
+        const double cs = std::sqrt(gm0 * pg / dg);
         const double vn = P[V11] * N[0] + P[V22] * N[1] + P[V33] * N[2];
         auto A = Vars();
 
@@ -141,6 +177,9 @@ struct newtonian_hydro::riemann_hlle
 
     inline Vars operator()(Vars Pl, Vars Pr) const
     {
+        check_valid_prim(Pl, "newtonian_hydro::riemann_hlle");
+        check_valid_prim(Pr, "newtonian_hydro::riemann_hlle");
+
         auto Ul = p2c(Pl);
         auto Ur = p2c(Pr);
         auto Al = p2a(Pl, nhat);
@@ -178,6 +217,8 @@ struct newtonian_hydro::source_terms
 {
     inline Vars operator()(Vars P, Position X) const
     {
+        check_valid_prim(P, "newtonian_hydro::source_terms");
+
         const double r = X[0];
         const double q = X[1];
         const double dg = P[0];
@@ -206,7 +247,7 @@ struct newtonian_hydro::source_terms
 
         // Source terms for thermal heating
         // --------------------------------------------------------------------
-        S[NRG] += std::exp(-r * r) * std::sin(q * 6) * 0.25;
+        S[NRG] += std::exp(-r * r) * std::pow(std::sin(q * 6), 2) * 0.25;
 
 
         return S;

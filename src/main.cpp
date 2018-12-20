@@ -673,7 +673,7 @@ int run(int argc, const char* argv[])
     auto sts = run_status::from_config(cfg);
     auto database  = create_database(cfg);
     auto scheduler = create_scheduler(cfg, sts, database);
-    auto dt = 0.25 * M_PI / cfg.nr;
+    auto dt = 0.25 * M_PI / cfg.nr; // WARNING: assuming here that speeds are generally \lesssim 1
 
 
     ThreadPool thread_pool(cfg.num_threads);

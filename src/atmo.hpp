@@ -49,7 +49,6 @@ struct atmo::run_status
 struct atmo::run_config
 {
     static run_config from_json(std::istream& is);
-    static run_config from_dict(std::map<std::string, std::string> items);
     static run_config from_argv(int argc, const char* argv[]);
 
     void print(std::ostream& os) const;

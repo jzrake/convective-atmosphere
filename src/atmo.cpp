@@ -139,38 +139,6 @@ run_config run_config::from_json(std::istream& is)
     return cfg;
 }
 
-run_config run_config::from_dict(std::map<std::string, std::string> items)
-{
-    auto cfg = run_config();
-
-    visit_struct::for_each(cfg, [items] (const char* name, auto& value)
-    {
-        if (items.find(name) != items.end())
-        {
-            cmdline::set_from_string(items.at(name), value);
-        }
-    });
-
-    for (const auto& item : items)
-    {
-        bool found = false;
-
-        visit_struct::for_each(cfg, [item, &found] (const char* name, auto&)
-        {
-            if (item.first == name)
-            {
-                found = true;;
-            }
-        });
-
-        if (! found)
-        {
-            throw std::runtime_error("unrecognized option: " + item.first);
-        }
-    }
-    return cfg;
-}
-
 run_config run_config::from_argv(int argc, const char* argv[])
 {
     auto args = cmdline::parse_keyval(argc, argv);
@@ -195,6 +163,24 @@ run_config run_config::from_argv(int argc, const char* argv[])
             cmdline::set_from_string(items.at(name), value);
         }
     });
+
+    for (const auto& item : args)
+    {
+        bool found = false;
+
+        visit_struct::for_each(cfg, [item, &found] (const char* name, auto&)
+        {
+            if (item.first == name)
+            {
+                found = true;;
+            }
+        });
+
+        if (! found)
+        {
+            throw std::runtime_error("unrecognized option: " + item.first);
+        }
+    }
     return cfg;
 }
 

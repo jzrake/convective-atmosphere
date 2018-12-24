@@ -21,7 +21,8 @@ VISITABLE_STRUCT(run_config,
     num_blocks,
     num_threads,
     test_mode,
-    outer_radius);
+    outer_radius,
+    noise);
 
 
 

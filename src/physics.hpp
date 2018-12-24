@@ -247,8 +247,8 @@ struct newtonian_hydro::source_terms
 
         // Source terms for thermal heating
         // --------------------------------------------------------------------
-        S[NRG] += std::exp(-r * r) * std::pow(std::sin(q * 6), 2) * 0.25;
-
+        S[NRG] += std::exp(-r * r) * 0.25;
+        S[NRG] += dg * dg * std::sqrt(pg / (5. / 3 - 1.) / dg) * (-0.05); 
 
         return S;
     }

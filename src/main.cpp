@@ -632,7 +632,7 @@ Database create_database(run_config cfg)
             database.insert(std::make_tuple(i, 0, 0, Field::face_area_i), a_faces_i);
             database.insert(std::make_tuple(i, 0, 0, Field::face_area_j), a_faces_j);
 
-            auto initial_data = ufunc::vfrom(atmosphere(1e-3));
+            auto initial_data = ufunc::vfrom(atmosphere(cfg.noise));
             database.insert(std::make_tuple(i, 0, 0, Field::conserved), prim_to_cons(initial_data(x_cells)));
         }
     }

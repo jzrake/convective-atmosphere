@@ -82,4 +82,5 @@ struct atmo::run_config
 
     /** Physics setup */
     double outer_radius      = 10.0;
+    double noise             = 1e-3;
 };

@@ -389,7 +389,7 @@ struct gradient_plm
 
 
 // ============================================================================
-auto advance_2d(nd::array<double, 3> U0, const MeshGeometry& G, double dt)
+auto advance_2d(hydro::source_terms source_terms, nd::array<double, 3> U0, const MeshGeometry& G, double dt)
 {
     auto _ = nd::axis::all();
 
@@ -417,7 +417,7 @@ auto advance_2d(nd::array<double, 3> U0, const MeshGeometry& G, double dt)
 
     auto gradient_est = ufunc::from(gradient_plm(2.0));
     auto advance_cons = ufunc::vfrom(update_formula);
-    auto evaluate_src = ufunc::vfrom(hydro::source_terms());
+    auto evaluate_src = ufunc::vfrom(source_terms);
     auto cons_to_prim = ufunc::vfrom(hydro::cons_to_prim());
     auto godunov_flux_i = ufunc::vfrom(hydro::riemann_hlle({1, 0, 0}));
     auto godunov_flux_j = ufunc::vfrom(hydro::riemann_hlle({0, 1, 0}));
@@ -469,15 +469,18 @@ auto advance_2d(nd::array<double, 3> U0, const MeshGeometry& G, double dt)
 
 
 // ============================================================================
-void update_2d_threaded(ThreadPool& pool, Database& database, double dt, double rk_factor)
+void update_2d_threaded(
+    ThreadPool& pool,
+    hydro::source_terms source_terms,
+    Database& database, double dt, double rk_factor)
 {
     using Result = std::pair<Database::Index, Database::Array>;
     auto futures = std::vector<std::future<Result>>();
 
-    auto update_task = [] (Database::Index index, const Database::Array& U,
+    auto update_task = [S = source_terms] (Database::Index index, const Database::Array& U,
 			   const MeshGeometry& G, double dt)
     {
-        return std::make_pair(index, advance_2d(U, G, dt));
+        return std::make_pair(index, advance_2d(S, U, G, dt));
     };
 
     for (const auto& patch : database.all(Field::conserved))
@@ -498,16 +501,19 @@ void update_2d_threaded(ThreadPool& pool, Database& database, double dt, double 
     }
 }
 
-void update(ThreadPool& pool, Database& database, double dt, int rk)
+void update(ThreadPool& pool,
+    hydro::source_terms source_terms,
+    Database& database,
+    double dt, int rk)
 {
     switch (rk)
     {
         case 1:
-            update_2d_threaded(pool, database, dt, 0.0);
+            update_2d_threaded(pool, source_terms, database, dt, 0.0);
             break;
         case 2:
-            update_2d_threaded(pool, database, dt, 0.0);
-            update_2d_threaded(pool, database, dt, 0.5);
+            update_2d_threaded(pool, source_terms, database, dt, 0.0);
+            update_2d_threaded(pool, source_terms, database, dt, 0.5);
             break;
         default:
             throw std::invalid_argument("rk must be 1 or 2");
@@ -677,6 +683,7 @@ int run(int argc, const char* argv[])
     auto sts = run_status::from_config(cfg);
     auto database  = create_database(cfg);
     auto scheduler = create_scheduler(cfg, sts, database);
+    auto source_terms = hydro::source_terms(cfg.heating_rate, cfg.cooling_rate);
     auto dt = 0.25 * M_PI / cfg.nr; // WARNING: assuming here that speeds are generally \lesssim 1
 
 
@@ -704,7 +711,7 @@ int run(int argc, const char* argv[])
         scheduler.dispatch(sts.time);
 
         auto timer = Timer();
-        update(thread_pool, database, dt, cfg.rk);
+        update(thread_pool, source_terms, database, dt, cfg.rk);
 
         sts.time += dt;
         sts.iter += 1;

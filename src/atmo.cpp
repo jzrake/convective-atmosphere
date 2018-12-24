@@ -22,7 +22,9 @@ VISITABLE_STRUCT(run_config,
     num_threads,
     test_mode,
     outer_radius,
-    noise);
+    noise,
+    heating_rate,
+    cooling_rate);
 
 
 

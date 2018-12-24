@@ -215,17 +215,30 @@ struct newtonian_hydro::riemann_hlle
 // ============================================================================
 struct newtonian_hydro::source_terms
 {
+
+
+    // ========================================================================
+    source_terms(double heating_rate, double cooling_rate)
+    : heating_rate(heating_rate)
+    , cooling_rate(cooling_rate)
+    {
+    }
+
+
+    // ========================================================================
     inline Vars operator()(Vars P, Position X) const
     {
         check_valid_prim(P, "newtonian_hydro::source_terms");
 
         const double r = X[0];
         const double q = X[1];
+        const double gm = 5. / 3;
         const double dg = P[0];
         const double vr = P[1];
         const double vq = P[2];
         const double vp = P[3];
         const double pg = P[4];
+        const double Tg = pg / dg / (gm - 1);
         auto S = Vars();
 
 
@@ -241,19 +254,27 @@ struct newtonian_hydro::source_terms
         // Source terms for point mass gravity. GM = 1.0.
         // --------------------------------------------------------------------
         const double g = 1.0 / r / r;
-        S[S11] += -dg * g;
-        S[NRG] += -dg * g * vr;
+        S[S11] -= dg * g;
+        S[NRG] -= dg * g * vr;
 
 
-        // Source terms for thermal heating
+        // Source terms for thermal heating and Bremsstrahlung cooling
         // --------------------------------------------------------------------
-        S[NRG] += std::exp(-r * r) * 0.25;
-        S[NRG] += dg * dg * std::sqrt(pg / (5. / 3 - 1.) / dg) * (-0.05); 
+        S[NRG] += heating_rate * std::exp(-r * r);
+        S[NRG] -= cooling_rate * std::sqrt(Tg) * dg * dg;
+
 
         return S;
     }
+
     double cot(double x) const
     {
         return std::tan(M_PI_2 - x);
     }
+
+
+private:
+    // ========================================================================
+    double heating_rate = 0.0;
+    double cooling_rate = 0.0;
 };

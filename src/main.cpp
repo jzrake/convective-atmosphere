@@ -556,7 +556,7 @@ struct boundary_value
     {
         switch (edge)
         {
-            case PatchBoundary::il: return fixed_inner(patch);
+            case PatchBoundary::il: return reflecting_inner(patch);
             case PatchBoundary::ir: return zero_gradient_outer(patch);
             case PatchBoundary::jl: return nd::array<double, 3>();
             case PatchBoundary::jr: return nd::array<double, 3>();
@@ -583,6 +583,30 @@ struct boundary_value
         U.select(_, _, 2) = P[2];
         U.select(_, _, 3) = P[3];
         U.select(_, _, 4) = P[4];
+        return U;
+    }
+
+    nd::array<double, 3> reflecting_inner(const nd::array<double, 3>& patch) const
+    {
+        auto _ = nd::axis::all();
+        auto U = nd::array<double, 3>(2, patch.shape(1), 5);
+        auto non_const_patch = patch;
+
+        U.select(0, _, 0) = patch.select(1, _, 0);
+        U.select(1, _, 0) = patch.select(0, _, 0);
+
+        U.select(0, _, 1) = non_const_patch.select(1, _, 1) * -1.0;
+        U.select(1, _, 1) = non_const_patch.select(0, _, 1) * -1.0;
+
+        U.select(0, _, 2) = patch.select(1, _, 2);
+        U.select(1, _, 2) = patch.select(0, _, 2);
+
+        U.select(0, _, 3) = patch.select(1, _, 3);
+        U.select(1, _, 3) = patch.select(0, _, 3);
+
+        U.select(0, _, 4) = patch.select(1, _, 4);
+        U.select(1, _, 4) = patch.select(0, _, 4);
+
         return U;
     }
 };

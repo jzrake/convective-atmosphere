@@ -83,6 +83,6 @@ struct atmo::run_config
     /** Physics setup */
     double outer_radius      = 10.0;
     double noise             = 1e-3;
-    double heating_rate       = 0.1;
-    double cooling_rate       = 0.1;
+    double heating_rate       = 0.25;
+    double cooling_rate       = 0.05;
 };
